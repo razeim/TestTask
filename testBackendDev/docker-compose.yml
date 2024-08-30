@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:13
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: parol
+      POSTGRES_DB: postgres
+    ports:
+      - "4545:5432"  # Пробросим порт на 4545
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    container_name: go_app
+    environment:
+      PORT: 8000
+      DB_URL: postgres://postgres:parol@db:5432/postgres?sslmode=disable
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  test:
+    build:
+      context: .
+      target: builder  # Используем стадию сборки для тестов
+    container_name: go_test
+    command: ["go", "test", "./..."]  # Запускаем тесты
+    environment:
+      DB_URL: postgres://postgres:parol@db:5432/postgres?sslmode=disable
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
